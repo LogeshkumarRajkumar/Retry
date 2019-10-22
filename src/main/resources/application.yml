@@ -1,0 +1,44 @@
+management.endpoints.web.exposure.include: '*'
+management.endpoint.health.show-details: always
+
+management.health.diskspace.enabled: false
+management.health.circuitbreakers.enabled: true
+management.health.ratelimiters.enabled: true
+
+management.metrics.tags.application: ${spring.application.name}
+management.metrics.distribution.percentiles-histogram.http.server.requests: true
+management.metrics.distribution.percentiles-histogram.resilience4j.circuitbreaker.calls: true
+
+resilience4j.circuitbreaker:
+    instances:
+        backend:
+            registerHealthIndicator: true
+            slidingWindowSize: 10
+            minimumNumberOfCalls: 5
+            permittedNumberOfCallsInHalfOpenState: 3
+            waitDurationInOpenState: 5s
+            failureRateThreshold: 50
+            eventConsumerBufferSize: 10
+
+resilience4j.retry:
+    configs:
+        default:
+            maxRetryAttempts: 5
+            waitDuration: 100
+            retryExceptions:
+                - org.springframework.web.client.HttpServerErrorException
+                - java.io.IOException
+    instances:
+        retryTest:
+            maxRetryAttempts: 2
+
+resilience4j.bulkhead:
+    configs:
+        default:
+            maxConcurrentCalls: 100
+    instances:
+        backendA:
+            maxConcurrentCalls: 10
+        backendB:
+            maxWaitDuration: 10ms
+            maxConcurrentCalls: 20
